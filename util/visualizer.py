@@ -4,10 +4,16 @@ import ntpath
 import time
 from . import util
 from . import html
-from scipy.misc import imresize
+from PIL import Image
+from torchvision import transforms
 
+
+def imresize(image, size, interp=Image.BICUBIC):
+    return transforms.Resize(size=size, interpolation=interp)(image)
 
 # save image to the disk
+
+
 def save_images(webpage, visuals, image_path, aspect_ratio=1.0, width=256):
     image_dir = webpage.get_image_dir()
     short_path = ntpath.basename(image_path[0])
@@ -44,17 +50,20 @@ class Visualizer():
         if self.display_id > 0:
             import visdom
             self.ncols = opt.display_ncols
-            self.vis = visdom.Visdom(server=opt.display_server, port=opt.display_port)
+            self.vis = visdom.Visdom(
+                server=opt.display_server, port=opt.display_port)
 
         if self.use_html:
             self.web_dir = os.path.join(opt.checkpoints_dir, opt.name, 'web')
             self.img_dir = os.path.join(self.web_dir, 'images')
             print('create web directory %s...' % self.web_dir)
             util.mkdirs([self.web_dir, self.img_dir])
-        self.log_name = os.path.join(opt.checkpoints_dir, opt.name, 'loss_log.txt')
+        self.log_name = os.path.join(
+            opt.checkpoints_dir, opt.name, 'loss_log.txt')
         with open(self.log_name, "a") as log_file:
             now = time.strftime("%c")
-            log_file.write('================ Training Loss (%s) ================\n' % now)
+            log_file.write(
+                '================ Training Loss (%s) ================\n' % now)
 
     def reset(self):
         self.saved = False
@@ -83,7 +92,8 @@ class Visualizer():
                     if idx % ncols == 0:
                         label_html += '<tr>%s</tr>' % label_html_row
                         label_html_row = ''
-                white_image = np.ones_like(image_numpy.transpose([2, 0, 1])) * 255
+                white_image = np.ones_like(
+                    image_numpy.transpose([2, 0, 1])) * 255
                 while idx % ncols != 0:
                     images.append(white_image)
                     label_html_row += '<td></td>'
@@ -104,14 +114,17 @@ class Visualizer():
                                    win=self.display_id + idx)
                     idx += 1
 
-        if self.use_html and (save_result or not self.saved):  # save images to a html file
+        # save images to a html file
+        if self.use_html and (save_result or not self.saved):
             self.saved = True
             for label, image in visuals.items():
                 image_numpy = util.tensor2im(image)
-                img_path = os.path.join(self.img_dir, 'epoch%.3d_%s.png' % (epoch, label))
+                img_path = os.path.join(
+                    self.img_dir, 'epoch%.3d_%s.png' % (epoch, label))
                 util.save_image(image_numpy, img_path)
             # update website
-            webpage = html.HTML(self.web_dir, 'Experiment name = %s' % self.name, reflesh=1)
+            webpage = html.HTML(
+                self.web_dir, 'Experiment name = %s' % self.name, reflesh=1)
             for n in range(epoch, 0, -1):
                 webpage.add_header('epoch [%d]' % n)
                 ims, txts, links = [], [], []
@@ -130,9 +143,11 @@ class Visualizer():
         if not hasattr(self, 'plot_data'):
             self.plot_data = {'X': [], 'Y': [], 'legend': list(losses.keys())}
         self.plot_data['X'].append(epoch + counter_ratio)
-        self.plot_data['Y'].append([losses[k] for k in self.plot_data['legend']])
+        self.plot_data['Y'].append([losses[k]
+                                    for k in self.plot_data['legend']])
         self.vis.line(
-            X=np.stack([np.array(self.plot_data['X'])] * len(self.plot_data['legend']), 1),
+            X=np.stack([np.array(self.plot_data['X'])] *
+                       len(self.plot_data['legend']), 1),
             Y=np.array(self.plot_data['Y']),
             opts={
                 'title': self.name + ' loss over time',
@@ -143,7 +158,8 @@ class Visualizer():
 
     # losses: same format as |losses| of plot_current_losses
     def print_current_losses(self, epoch, i, losses, t, t_data):
-        message = '(epoch: %d, iters: %d, time: %.3f, data: %.3f) ' % (epoch, i, t, t_data)
+        message = '(epoch: %d, iters: %d, time: %.3f, data: %.3f) ' % (
+            epoch, i, t, t_data)
         for k, v in losses.items():
             message += '%s: %.3f, ' % (k, v)
 
