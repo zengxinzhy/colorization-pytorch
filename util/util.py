@@ -206,7 +206,6 @@ def lab2rgb(lab_rs, opt):
 
 def get_colorization_data(data_raw, opt, ab_thresh=5., p=.125, num_points=None):
     data = {}
-
     data_lab = rgb2lab(data_raw[0], opt)
     data['A'] = data_lab[:, [0, ], :, :]
     data['B'] = data_lab[:, 1:, :, :]
@@ -349,8 +348,8 @@ def decode_mean(data_ab_quant, opt):
     #   data_ab_inf     Nx2xHxW \in [-1,1]
 
     (N, Q, H, W) = data_ab_quant.shape
-    a_range = torch.range(-opt.ab_max, opt.ab_max,
-                          step=opt.ab_quant).to(data_ab_quant.device)[None, :, None, None]
+    a_range = torch.arange(-opt.ab_max, opt.ab_max + opt.ab_quant,
+                           step=opt.ab_quant).to(data_ab_quant.device)[None, :, None, None]
     a_range = a_range.type(data_ab_quant.type())
 
     # reshape to AB space
